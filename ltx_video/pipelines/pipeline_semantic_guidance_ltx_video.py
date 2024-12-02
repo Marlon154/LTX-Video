@@ -3,10 +3,11 @@
 import html
 import inspect
 import math
+import numpy as np
 import re
 import urllib.parse as ul
 from typing import Callable, Dict, List, Optional, Tuple, Union
-
+import imageio
 
 import torch
 import torch.nn.functional as F
@@ -122,11 +123,11 @@ ASPECT_RATIO_512_BIN = {
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.retrieve_timesteps
 def retrieve_timesteps(
-    scheduler,
-    num_inference_steps: Optional[int] = None,
-    device: Optional[Union[str, torch.device]] = None,
-    timesteps: Optional[List[int]] = None,
-    **kwargs,
+        scheduler,
+        num_inference_steps: Optional[int] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        timesteps: Optional[List[int]] = None,
+        **kwargs,
 ):
     """
     Calls the scheduler's `set_timesteps` method and retrieves timesteps from the scheduler after the call. Handles
@@ -210,13 +211,13 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
     model_cpu_offload_seq = "text_encoder->transformer->vae"
 
     def __init__(
-        self,
-        tokenizer: T5Tokenizer,
-        text_encoder: T5EncoderModel,
-        vae: AutoencoderKL,
-        transformer: Transformer3DModel,
-        scheduler: DPMSolverMultistepScheduler,
-        patchifier: Patchifier,
+            self,
+            tokenizer: T5Tokenizer,
+            text_encoder: T5EncoderModel,
+            vae: AutoencoderKL,
+            transformer: Transformer3DModel,
+            scheduler: DPMSolverMultistepScheduler,
+            patchifier: Patchifier,
     ):
         super().__init__()
 
@@ -244,18 +245,18 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
     # Adapted from diffusers.pipelines.deepfloyd_if.pipeline_if.encode_prompt
     def encode_prompt(
-        self,
-        prompt: Union[str, List[str]],
-        do_classifier_free_guidance: bool = True,
-        negative_prompt: str = "",
-        num_images_per_prompt: int = 1,
-        device: Optional[torch.device] = None,
-        prompt_embeds: Optional[torch.FloatTensor] = None,
-        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-        prompt_attention_mask: Optional[torch.FloatTensor] = None,
-        negative_prompt_attention_mask: Optional[torch.FloatTensor] = None,
-        clean_caption: bool = False,
-        **kwargs,
+            self,
+            prompt: Union[str, List[str]],
+            do_classifier_free_guidance: bool = True,
+            negative_prompt: str = "",
+            num_images_per_prompt: int = 1,
+            device: Optional[torch.device] = None,
+            prompt_embeds: Optional[torch.FloatTensor] = None,
+            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+            prompt_attention_mask: Optional[torch.FloatTensor] = None,
+            negative_prompt_attention_mask: Optional[torch.FloatTensor] = None,
+            clean_caption: bool = False,
+            **kwargs,
     ):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -319,7 +320,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                 -1
             ] and not torch.equal(text_input_ids, untruncated_ids):
                 removed_text = self.tokenizer.batch_decode(
-                    untruncated_ids[:, max_length - 1 : -1]
+                    untruncated_ids[:, max_length - 1: -1]
                 )
                 logger.warning(
                     "The following part of your input was truncated because CLIP can only handle sequences up to"
@@ -434,15 +435,15 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         return extra_step_kwargs
 
     def check_inputs(
-        self,
-        prompt,
-        height,
-        width,
-        negative_prompt,
-        prompt_embeds=None,
-        negative_prompt_embeds=None,
-        prompt_attention_mask=None,
-        negative_prompt_attention_mask=None,
+            self,
+            prompt,
+            height,
+            width,
+            negative_prompt,
+            prompt_embeds=None,
+            negative_prompt_embeds=None,
+            prompt_attention_mask=None,
+            negative_prompt_attention_mask=None,
     ):
         if height % 8 != 0 or width % 8 != 0:
             raise ValueError(
@@ -459,7 +460,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                 "Provide either `prompt` or `prompt_embeds`. Cannot leave both `prompt` and `prompt_embeds` undefined."
             )
         elif prompt is not None and (
-            not isinstance(prompt, str) and not isinstance(prompt, list)
+                not isinstance(prompt, str) and not isinstance(prompt, list)
         ):
             raise ValueError(
                 f"`prompt` has to be of type `str` or `list` but is {type(prompt)}"
@@ -483,8 +484,8 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
             )
 
         if (
-            negative_prompt_embeds is not None
-            and negative_prompt_attention_mask is None
+                negative_prompt_embeds is not None
+                and negative_prompt_attention_mask is None
         ):
             raise ValueError(
                 "Must provide `negative_prompt_attention_mask` when specifying `negative_prompt_embeds`."
@@ -541,12 +542,14 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         caption = re.sub("<person>", "person", caption)
         # urls:
         caption = re.sub(
-            r"\b((?:https?:(?:\/{1,3}|[a-zA-Z0-9%])|[a-zA-Z0-9.\-]+[.](?:com|co|ru|net|org|edu|gov|it)[\w/-]*\b\/?(?!@)))",  # noqa
+            r"\b((?:https?:(?:\/{1,3}|[a-zA-Z0-9%])|[a-zA-Z0-9.\-]+[.](?:com|co|ru|net|org|edu|gov|it)[\w/-]*\b\/?(?!@)))",
+            # noqa
             "",
             caption,
         )  # regex for urls
         caption = re.sub(
-            r"\b((?:www:(?:\/{1,3}|[a-zA-Z0-9%])|[a-zA-Z0-9.\-]+[.](?:com|co|ru|net|org|edu|gov|it)[\w/-]*\b\/?(?!@)))",  # noqa
+            r"\b((?:www:(?:\/{1,3}|[a-zA-Z0-9%])|[a-zA-Z0-9.\-]+[.](?:com|co|ru|net|org|edu|gov|it)[\w/-]*\b\/?(?!@)))",
+            # noqa
             "",
             caption,
         )  # regex for urls
@@ -574,7 +577,8 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
         # все виды тире / all types of dash --> "-"
         caption = re.sub(
-            r"[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D]+",  # noqa
+            r"[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D]+",
+            # noqa
             "-",
             caption,
         )
@@ -658,15 +662,15 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_latents
     def prepare_latents(
-        self,
-        batch_size,
-        num_latent_channels,
-        num_patches,
-        dtype,
-        device,
-        generator,
-        latents=None,
-        latents_mask=None,
+            self,
+            batch_size,
+            num_latent_channels,
+            num_patches,
+            dtype,
+            device,
+            generator,
+            latents=None,
+            latents_mask=None,
     ):
         shape = (
             batch_size,
@@ -687,7 +691,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         elif latents_mask is not None:
             noise = randn_tensor(shape, generator=generator, device=device, dtype=dtype)
             latents = latents * latents_mask[..., None] + noise * (
-                1 - latents_mask[..., None]
+                    1 - latents_mask[..., None]
             )
         else:
             latents = latents.to(device)
@@ -698,7 +702,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
     @staticmethod
     def classify_height_width_bin(
-        height: int, width: int, ratios: dict
+            height: int, width: int, ratios: dict
     ) -> Tuple[int, int]:
         """Returns binned height and width."""
         ar = float(height / width)
@@ -708,7 +712,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
     @staticmethod
     def resize_and_crop_tensor(
-        samples: torch.Tensor, new_width: int, new_height: int
+            samples: torch.Tensor, new_width: int, new_height: int
     ) -> torch.Tensor:
         n_frames, orig_height, orig_width = samples.shape[-3:]
 
@@ -766,7 +770,6 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         editing_prompt: Optional[Union[str, List[str]]] = None,
         editing_prompt_embeddings: Optional[torch.Tensor] = None,
         editing_prompt_attention_mask: Optional[torch.Tensor] = None,
-        pooled_editing_prompt_embeds: Optional[torch.Tensor] = None,
         reverse_editing_direction: Optional[Union[bool, List[bool]]] = False,
         edit_guidance_scale: Optional[Union[float, List[float]]] = 5,
         edit_warmup_steps: Optional[Union[int, List[int]]] = 10,
@@ -968,12 +971,6 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
             editing_prompt_attention_mask = torch.cat(new_attention_mask_editing_prompt_embeds, dim=0)
 
         if do_classifier_free_guidance:
-            prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds], dim=0)
-            prompt_attention_mask = torch.cat(
-                [negative_prompt_attention_mask, prompt_attention_mask], dim=0
-            )
-
-        if do_classifier_free_guidance:
             if enabled_editing_prompts:
                 prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds, editing_prompt_embeddings], dim=0)
                 prompt_attention_mask = torch.cat([negative_prompt_attention_mask, prompt_attention_mask, editing_prompt_attention_mask], dim=0)
@@ -1015,7 +1012,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         if conditioning_mask is not None and is_video:
             assert num_images_per_prompt == 1
             conditioning_mask = (
-                torch.cat([conditioning_mask] * 2)
+                torch.cat([conditioning_mask] * (2 + enabled_editing_prompts))
                 if do_classifier_free_guidance
                 else conditioning_mask
             )
@@ -1039,6 +1036,21 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         num_warmup_steps = max(
             len(timesteps) - num_inference_steps * self.scheduler.order, 0
         )
+        self.edit_momentum = None
+        self.uncond_estimates = None
+        self.text_estimates = None
+        self.edit_estimates = None
+        self.sem_guidance = None
+
+        self.intermediate_latents = {   # todo remove
+            'uncond_estimates': [],
+            'text_estimates': [],
+            'edit_estimates': [],
+            'sem_guidance': [],
+            'denoised_latents': []
+        }
+
+        num_steps = (len(timesteps) - num_warmup_steps) // self.scheduler.order
 
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -1128,7 +1140,6 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
                     # default text guidance
                     noise_guidance = guidance_scale * (noise_pred_text - noise_pred_uncond)
-                    # noise_guidance = (noise_pred_text - noise_pred_edit_concepts[0])
 
                     # if self.uncond_estimates is None:
                     #     self.uncond_estimates = torch.zeros((num_steps + 1, *noise_pred_uncond.shape))
@@ -1195,15 +1206,14 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                             if i >= edit_warmup_steps_c:
                                 warmup_inds.append(c)
                             if i >= edit_cooldown_steps_c:
-                                noise_guidance_edit[c, :, :, :, :] = torch.zeros_like(noise_pred_edit_concept)
+                                noise_guidance_edit[c, :, :, :] = torch.zeros_like(noise_pred_edit_concept)
                                 continue
 
                             noise_guidance_edit_tmp = noise_pred_edit_concept - noise_pred_uncond
                             # tmp_weights = (noise_pred_text - noise_pred_edit_concept).sum(dim=(1, 2, 3))
-                            tmp_weights = (noise_guidance - noise_pred_edit_concept).sum(dim=(1, 2, 3, 4))
+                            tmp_weights = (noise_guidance - noise_pred_edit_concept).sum(dim=(1, 2))
 
-                            tmp_weights = torch.full_like(tmp_weights,
-                                                          edit_weight_c)  # * (1 / enabled_editing_prompts)
+                            tmp_weights = torch.full_like(tmp_weights, edit_weight_c)  # * (1 / enabled_editing_prompts)
                             if reverse_editing_direction_c:
                                 noise_guidance_edit_tmp = noise_guidance_edit_tmp * -1
                             concept_weights[c, :] = tmp_weights
@@ -1226,12 +1236,13 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                                     keepdim=False,
                                 ).to(noise_guidance_edit_tmp.dtype)
 
+
                             noise_guidance_edit_tmp = torch.where(
-                                torch.abs(noise_guidance_edit_tmp) >= tmp[:, :, None, None, None],
+                                torch.abs(noise_guidance_edit_tmp) >= tmp[:, :, None],
                                 noise_guidance_edit_tmp,
                                 torch.zeros_like(noise_guidance_edit_tmp),
                             )
-                            noise_guidance_edit[c, :, :, :, :] = noise_guidance_edit_tmp
+                            noise_guidance_edit[c, :, :, :] = noise_guidance_edit_tmp
 
                             # noise_guidance_edit = noise_guidance_edit + noise_guidance_edit_tmp
 
@@ -1247,10 +1258,9 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                             concept_weights_tmp = concept_weights_tmp / concept_weights_tmp.sum(dim=0)
                             # concept_weights_tmp = torch.nan_to_num(concept_weights_tmp)
 
-                            noise_guidance_edit_tmp = torch.index_select(noise_guidance_edit.to(device), 0,
-                                                                         warmup_inds)
+                            noise_guidance_edit_tmp = torch.index_select(noise_guidance_edit.to(device), 0, warmup_inds)
                             noise_guidance_edit_tmp = torch.einsum(
-                                "cb,cbijkl->bijkl", concept_weights_tmp, noise_guidance_edit_tmp
+                                "cb,cbij->bij", concept_weights_tmp, noise_guidance_edit_tmp
                             )
                             noise_guidance = noise_guidance + noise_guidance_edit_tmp
 
@@ -1267,26 +1277,124 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
 
                         concept_weights = torch.nan_to_num(concept_weights)
 
-                        noise_guidance_edit = torch.einsum("cb,cbijkl->bijkl", concept_weights, noise_guidance_edit)
+                        noise_guidance_edit = torch.einsum("cb,cbij->bij", concept_weights, noise_guidance_edit)
                         noise_guidance_edit = noise_guidance_edit.to(self.edit_momentum.device)
 
                         noise_guidance_edit = noise_guidance_edit + edit_momentum_scale * self.edit_momentum
 
-                        self.edit_momentum = edit_mom_beta * self.edit_momentum + (
-                                    1 - edit_mom_beta) * noise_guidance_edit
+                        self.edit_momentum = edit_mom_beta * self.edit_momentum + (1 - edit_mom_beta) * noise_guidance_edit
 
                         if warmup_inds.shape[0] == len(noise_pred_edit_concepts):
                             noise_guidance = noise_guidance + noise_guidance_edit
                             self.sem_guidance[i] = noise_guidance_edit.detach().cpu()
+                    save_dir = '/home/ml-stud14/ltx-video/outputs/2024-12-01'
+                    import os
+                    from PIL import Image
+                    import torchvision.utils as vutils
+                    if save_dir is not None:
+                        os.makedirs(save_dir, exist_ok=True)
+                        os.makedirs(os.path.join(save_dir, "uncond"), exist_ok=True)
+                        os.makedirs(os.path.join(save_dir, "text"), exist_ok=True)
+                        os.makedirs(os.path.join(save_dir, "edit"), exist_ok=True)
+                        os.makedirs(os.path.join(save_dir, "latents"), exist_ok=True)
+                        if False:
+                            tmp_noise_pred_uncond = self.patchifier.unpatchify(
+                                latents=latents,
+                                output_height=latent_height,
+                                output_width=latent_width,
+                                output_num_frames=latent_num_frames,
+                                out_channels=self.transformer.in_channels
+                                             // math.prod(self.patchifier.patch_size),
+                            )
+                            uncond_image = vae_decode(
+                                tmp_noise_pred_uncond,
+                                self.vae,
+                                kwargs.get("is_video", False),
+                                vae_per_channel_normalize=kwargs.get("vae_per_channel_normalize", False),
+                            )
+                            uncond_image = self.image_processor.postprocess(uncond_image, output_type="pt")
+                            vutils.save_image(
+                                uncond_image.squeeze(0).transpose(0, 1),
+                                os.path.join(save_dir, "latents", f"step_{i:04d}.png"),
+                                normalize=True
+                            )
+
+                            tmp_noise_pred_uncond = self.patchifier.unpatchify(
+                                latents=noise_pred_uncond,
+                                output_height=latent_height,
+                                output_width=latent_width,
+                                output_num_frames=latent_num_frames,
+                                out_channels=self.transformer.in_channels
+                                             // math.prod(self.patchifier.patch_size),
+                            )
+                            uncond_image = vae_decode(
+                                tmp_noise_pred_uncond,
+                                self.vae,
+                                kwargs.get("is_video", False),
+                                vae_per_channel_normalize=kwargs.get("vae_per_channel_normalize", False),
+                            )
+                            uncond_image = self.image_processor.postprocess(uncond_image, output_type="pt")
+                            vutils.save_image(
+                                uncond_image.squeeze(0).transpose(0, 1),
+                                os.path.join(save_dir, "uncond", f"step_{i:04d}.png"),
+                                normalize=True
+                            )
+
+                            # Save text prediction
+                            text_latents = self.patchifier.unpatchify(
+                                latents=noise_pred_text,
+                                output_height=latent_height,
+                                output_width=latent_width,
+                                output_num_frames=latent_num_frames,
+                                out_channels=self.transformer.in_channels // math.prod(self.patchifier.patch_size),
+                            )
+                            text_image = vae_decode(
+                                text_latents,
+                                self.vae,
+                                kwargs.get("is_video", False),
+                                vae_per_channel_normalize=kwargs.get("vae_per_channel_normalize", False),
+                            )
+                            text_image = self.image_processor.postprocess(text_image, output_type="pt")
+                            vutils.save_image(
+                                text_image.squeeze(0).transpose(0, 1),
+                                os.path.join(save_dir, "text", f"step_{i:04d}.png"),
+                                normalize=True
+                            )
+
+                            # Save edit prediction
+                            edit_latents = self.patchifier.unpatchify(
+                                latents=noise_guidance_edit,
+                                output_height=latent_height,
+                                output_width=latent_width,
+                                output_num_frames=latent_num_frames,
+                                out_channels=self.transformer.in_channels // math.prod(self.patchifier.patch_size),
+                            )
+                            text_image = vae_decode(
+                                edit_latents,
+                                self.vae,
+                                kwargs.get("is_video", False),
+                                vae_per_channel_normalize=kwargs.get("vae_per_channel_normalize", False),
+                            )
+                            text_image = self.image_processor.postprocess(text_image, output_type="pt")
+                            vutils.save_image(
+                                text_image.squeeze(0).transpose(0, 1),
+                                os.path.join(save_dir, "edit", f"step_{i:04d}.png"),
+                                normalize=True
+                            )
 
                     noise_pred = noise_pred_uncond + noise_guidance
+                    # if i < 10:
+                    #     noise_pred = noise_pred_uncond + guidance_scale * (
+                    #             noise_pred_text - noise_pred_uncond
+                    #     )
+                    # else:
+                    #     noise_pred = noise_pred_uncond + guidance_scale * (
+                    #             noise_pred_text - noise_pred_uncond
+                    #     ) + edit_guidance_scale * (noise_pred_out[2] - noise_pred_uncond)
                     current_timestep, _ = current_timestep.chunk(2)
 
                 # learned sigma
-                if (
-                    self.transformer.config.out_channels // 2
-                    == self.transformer.config.in_channels
-                ):
+                if (self.transformer.config.out_channels // 2 == self.transformer.config.in_channels):
                     noise_pred = noise_pred.chunk((2 + enabled_editing_prompts), dim=1)[0]
 
                 # compute previous image: x_t -> x_t-1
@@ -1296,7 +1404,8 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
                     latents,
                     **extra_step_kwargs,
                     return_dict=False,
-                )[0]
+                )[0][0]   # todo
+                latents = latents.unsqueeze(0)
 
                 # call the callback, if provided
                 if i == len(timesteps) - 1 or (
@@ -1312,8 +1421,7 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
             output_height=latent_height,
             output_width=latent_width,
             output_num_frames=latent_num_frames,
-            out_channels=self.transformer.in_channels
-            // math.prod(self.patchifier.patch_size),
+            out_channels=self.transformer.in_channels // math.prod(self.patchifier.patch_size),
         )
         if output_type != "latent":
             image = vae_decode(
@@ -1383,8 +1491,8 @@ class SemanticLTXVideoPipeline(DiffusionPipeline):
         if target_len > init_len:
             repeat_factor = (target_len + init_len - 1) // init_len  # Ceiling division
             init_latents = init_latents.repeat(1, 1, repeat_factor, 1, 1)[
-                :, :, :target_len
-            ]
+                           :, :, :target_len
+                           ]
 
         # Prepare the conditioning mask (1.0 = condition on this token)
         b, n, f, h, w = init_latents.shape

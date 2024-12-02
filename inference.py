@@ -50,6 +50,7 @@ def load_unet(unet_dir):
     unet_state_dict = safetensors.torch.load_file(unet_ckpt_path)
     transformer.load_state_dict(unet_state_dict, strict=True)
     if torch.cuda.is_available():
+
         transformer = transformer.cuda()
     return transformer
 

@@ -347,7 +347,6 @@ def main():
         "negative_prompt_attention_mask": None,
         "media_items": media_items,
         "editing_prompt": args.editing_prompt,
-
     }
 
     generator = torch.Generator(
@@ -374,6 +373,11 @@ def main():
             else ConditioningMethod.UNCONDITIONAL
         ),
         mixed_precision=not args.bfloat16,
+        edit_guidance_scale=5.0,
+        edit_warmup_steps=1,
+        edit_threshold=0.8,
+        edit_cooldown_steps=37,
+
     ).images
 
     # Crop the padded images to the desired resolution and number of frames
